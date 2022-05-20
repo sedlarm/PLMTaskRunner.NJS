@@ -4,6 +4,7 @@ const app = express();
 const plmapi = require('./plm.js');
 const fs = require('fs');
 const pdf = require('wkhtmltopdf');
+
 require('wkhtmltopdf').command = 'C:\\Private\\wkhtmltox\\bin\\wkhtmltopdf.exe';
 
 app.listen(3000, () => console.log('Listening on port 3000...'));
@@ -19,9 +20,9 @@ app.post('/api/v1/converttopdf/',
                 let values = plmapi.parseValues(data);
                 let fileName = values.CISLO_FAKTURY + ".pdf";
                 convertToPdf(req.body, fileName, (tmpFile) => {
-                    //plmapi.uploadFile(wsId, dmsId, fileName, null, tmpFile);
                     let stats = fs.statSync(tmpFile);
                     if (stats.size > 0 ) {
+                        //plmapi.uploadFile(wsId, dmsId, fileName, null, tmpFile);
                         res.send({status: 'OK'});
                     } else {
                         res.status(500).send('PDF creation failed');
