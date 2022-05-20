@@ -4,8 +4,14 @@ const app = express();
 const plmapi = require('./plm.js');
 const fs = require('fs');
 const pdf = require('wkhtmltopdf');
-
+const basicAuth = require('express-basic-auth');
+ 
 require('wkhtmltopdf').command = 'C:\\Private\\wkhtmltox\\bin\\wkhtmltopdf.exe';
+
+app.use(basicAuth({
+    users: { test 'test123' },
+    challenge: false // <--- needed to actually show the login dialog!
+}));
 
 app.listen(3000, () => console.log('Listening on port 3000...'));
 
