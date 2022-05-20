@@ -9,7 +9,7 @@ const basicAuth = require('express-basic-auth');
 require('wkhtmltopdf').command = 'C:\\Private\\wkhtmltox\\bin\\wkhtmltopdf.exe';
 
 app.use(basicAuth({
-    users: { test 'test123' },
+    users: { test: 'test123' },
     challenge: false // <--- needed to actually show the login dialog!
 }));
 
