@@ -42,7 +42,7 @@ app.post('/api/v1/converttopdf/',
 
 function convertToPdf(fileData, fileName, pdfOptions, callback) {
     let tmpFile = './upload/' + fileName;
-    
+
     pdfOptions.debug = false;
     pdfOptions.silent = true;
     pdfOptions.output = tmpFile;
