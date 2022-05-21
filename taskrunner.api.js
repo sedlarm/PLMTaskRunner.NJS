@@ -2,14 +2,15 @@ const express = require('express');
 const bodyparser = require('body-parser');
 const app = express();
 const plmapi = require('./plm.js');
+const config = require('./config.js');
 const fs = require('fs');
 const pdf = require('wkhtmltopdf');
 const basicAuth = require('express-basic-auth');
  
-require('wkhtmltopdf').command = 'C:\\Private\\wkhtmltox\\bin\\wkhtmltopdf.exe';
+require('wkhtmltopdf').command = config.wkhtmltopdf.path;
 
 app.use(basicAuth({
-    users: { test: 'test123' },
+    users: config.api.basicAuth.users,
     challenge: false // <--- needed to actually show the login dialog!
 }));
 
@@ -25,10 +26,11 @@ app.post('/api/v1/converttopdf/',
                 console.log("Found ITEM: " + data.title);
                 let values = plmapi.parseValues(data);
                 let fileName = values.CISLO_FAKTURY + ".pdf";
-                convertToPdf(req.body, fileName, (tmpFile) => {
+                convertToPdf(req.body, fileName, config.wkhtmltopdf.templates.faktura, (tmpFile) => {
                     let stats = fs.statSync(tmpFile);
                     if (stats.size > 0 ) {
                         //plmapi.uploadFile(wsId, dmsId, fileName, null, tmpFile);
+                        //fs.unlink(tnpFile);
                         res.send({status: 'OK'});
                     } else {
                         res.status(500).send('PDF creation failed');
@@ -38,21 +40,15 @@ app.post('/api/v1/converttopdf/',
         }); 
     });
 
-function convertToPdf(fileData, fileName, callback) {
+function convertToPdf(fileData, fileName, pdfOptions, callback) {
     let tmpFile = './upload/' + fileName;
-    const pdfOptions = { 
-        'marginTop'       : '0.5cm',   // default is 0, units: mm, cm, in, px
-        'marginRight'     : '0.5cm',
-        'marginBottom'    : '0.5cm',
-        'marginLeft'      : '0.5cm',
-        'encoding': 'utf-8',
-        'pageSize' : 'A4', 
-        'orientation': 'portrait',
-        'debug': false,
-        'output': tmpFile
-    };    
+    
+    pdfOptions.debug = false;
+    pdfOptions.silent = true;
+    pdfOptions.output = tmpFile;
+
     pdf(fileData, pdfOptions, (err, stream) => {
-        if (err) console.log(err);
+        if (err) console.log(err.message);
         callback(tmpFile);
     });  
 }
