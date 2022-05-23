@@ -8,11 +8,11 @@ login: function(callback) {
     
     console.log("> PLM: DEV Authentication");
     
-    let url = config.plm.devApiUrl + 'authentication/v1/authenticate';
+    let url = module.exports.config.plm.devApiUrl + 'authentication/v1/authenticate';
 
     let params = new URLSearchParams();
-    params.append('client_id', config.plm.clientId);
-    params.append('client_secret', config.plm.clientSecret);
+    params.append('client_id', module.exports.config.plm.clientId);
+    params.append('client_secret', module.exports.config.plm.clientSecret);
     params.append('grant_type', 'client_credentials'); 
     params.append('scope', 'data:read');
 
@@ -21,11 +21,11 @@ login: function(callback) {
         if (response.status == 200) {
             axios.defaults.headers.common['Conent-Type']    = "application/json";
             axios.defaults.headers.common['Accept']         = "application/json";
-            axios.defaults.headers.common['X-user-id']      = config.plm.user;
-            axios.defaults.headers.common['X-Tenant']       = config.plm.tenant;
+            axios.defaults.headers.common['X-user-id']      = module.exports.config.plm.user;
+            axios.defaults.headers.common['X-Tenant']       = module.exports.config.plm.tenant;
             axios.defaults.headers.common['Authorization']  = "Bearer " + response.data.access_token;
                 
-            console.log('Login to tenant ' + config.plm.tenant + ' successful');
+            console.log('Login to tenant ' + module.exports.config.plm.tenant + ' successful');
             callback();
         } else {
             console.log('LOGIN FAILED');
@@ -44,7 +44,7 @@ getDetails: function(wsId, dmsId, callback) {
     
     console.log("> PLM: GET item details"); 
     
-    let url = config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId;
+    let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId;
     
     axios.get(url).then(function (response) {
         callback(response.data);
@@ -58,7 +58,7 @@ getDetailsGrid: function(wsId, dmsId, callback) {
     
     console.log("> PLM: GET item GRID details"); 
     
-    let url = config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId + '/views/13/rows';
+    let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId + '/views/13/rows';
     
     axios.get(url).then(function (response) {
         console.log(response.data.rows.length + " grid rows");
@@ -73,7 +73,7 @@ uploadFile: function(wsId, dmsId, fileName, folder, srcFile) {
 
     console.log("> PLM: Getting list of attachments");
 
-    let url = config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments?asc=name';
+    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments?asc=name';
 
     axios.get(url, {
         headers : {
@@ -113,7 +113,7 @@ createFileFolder: function(wsId, dmsId, folder) {
     
     console.log(' > PLM: Creating folder ' + folder);
         
-    let url = config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/folders';
+    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/folders';
     
     axios.post(url, {
         'folderName' : folder 
@@ -136,7 +136,7 @@ createFile: function(wsId, dmsId, folderId, fileName, srcFile) {
     console.log(' > PLM: Creating file record');
     
     let stats   = fs.statSync(srcFile);
-    let url     = config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments';
+    let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments';
        
     axios.post(url, {
         'description'   : fileName,
@@ -169,7 +169,7 @@ prepareUpload: function(fileData, callback) {
             'Access-Control-Request-Headers': 'content-type,x-amz-meta-filename',
             'Access-Control-Request-Method' : 'PUT',
             'Host'              : 'plm360-aws-useast.s3.amazonaws.com',
-            'Origin'            : 'https://' + config.plm.tenant + '.autodeskplm360.net',
+            'Origin'            : 'https://' + module.exports.config.plm.tenant + '.autodeskplm360.net',
             'Sec-Fetch-Mode'    : 'cors',
             'Sec-Fetch-Site'    : 'cross-site'
         }
@@ -205,7 +205,7 @@ setAttachmentStatus: function(wsId, dmsId, fileId) {
     
     console.log('> PLM: Setting attachment status');
     
-    let url = config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
+    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
     
     axios.patch(url, {
         status : {
@@ -222,7 +222,7 @@ createVersion: function(wsId, dmsId, fileName, folderId, fileId, srcFile) {
     console.log('> PLM: Creating new version as file exists already');
     
     let stats   = fs.statSync(srcFile);
-    let url     = config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
+    let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
     
     axios.post(url, {
         'description'   : fileName,

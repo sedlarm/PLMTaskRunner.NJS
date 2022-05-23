@@ -6,6 +6,7 @@ exports.plm = {
 
     devApiUrl:      'https://developer.api.autodesk.com/',
     apiUrl:         'https://futurefarming.autodeskplm360.net/api/v3/',
+    url:            'https://futurefarming.autodeskplm360.net/',
 }
 
 exports.wkhtmltopdf = {
@@ -18,10 +19,7 @@ exports.wkhtmltopdf = {
             'marginLeft'      : '0.5cm',
             'encoding': 'utf-8',
             'pageSize' : 'A4', 
-            'orientation': 'portrait',
-            'debug': false,
-            'silent': true,
-            'output': tmpFile
+            'orientation': 'portrait'
         }
     }
 }
