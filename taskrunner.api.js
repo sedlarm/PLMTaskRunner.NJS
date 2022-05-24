@@ -6,6 +6,8 @@ const config = require('./config.js');
 const fs = require('fs');
 const pdf = require('wkhtmltopdf');
 const basicAuth = require('express-basic-auth');
+const plm = require('./plm.js');
+const temp = require('temp').track();
  
 require('wkhtmltopdf').command = config.wkhtmltopdf.path;
 require('./plm.js').config = config;
@@ -22,9 +24,11 @@ app.post('/api/v1/converttopdf/',
     (req, res) => {
         let wsId = req.query.wsId;
         let dmsId = req.query.dmsId;
+        let transId = req.query.transId;
         plmapi.login(function() {
             plmapi.getDetails(wsId, dmsId, (data) => {
                 console.log("Found ITEM: " + data.title);
+                /*
                 let values = plmapi.parseValues(data);
                 let fileName = values.CISLO_FAKTURY + ".pdf";
                 convertToPdf(req.body, fileName, config.wkhtmltopdf.templates.faktura, (tmpFile) => {
@@ -36,13 +40,27 @@ app.post('/api/v1/converttopdf/',
                             if (err) {
                                 console.log("remove file failed: " + err.message);
                             }
-                
+                */
                             res.send({status: 'OK'});
+                            if (transId) {
+                                plmapi.getTransitions(wsId, dmsId, (tdata) => {
+                                    var transitions = plmapi.parseTransitions(tdata);
+                                    var trans = null;
+                                    if (trans = Object.values.find(element => element.transitionID == transId)) {
+                                        let step = tdata.currentStep + 1;
+                                        let comment = 'run by PLMTaskRunner service';
+                                        console.log('Calling transition ' + trans.transitionID + ',' + step);
+                                        //plmapi.transition(wsId, dmsId, trans.transitionID, step, comment);
+                                    }
+                                });
+                            }
+                /*
                         });
                     } else {
                         res.status(500).send('PDF creation failed');
                     }
                 });
+                */
             });
         }); 
     });

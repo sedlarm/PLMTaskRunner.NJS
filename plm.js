@@ -4,8 +4,8 @@ const { isObject } = require('util');
 const { isStringObject } = require('util/types');
 
 module.exports = {
+
 login: function(callback) {
-    
     console.log("> PLM: DEV Authentication");
     
     let url = module.exports.config.plm.devApiUrl + 'authentication/v1/authenticate';
@@ -41,7 +41,6 @@ login: function(callback) {
 },
 
 getDetails: function(wsId, dmsId, callback) {
-    
     console.log("> PLM: GET item details"); 
     
     let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId;
@@ -55,7 +54,6 @@ getDetails: function(wsId, dmsId, callback) {
 },
 
 getDetailsGrid: function(wsId, dmsId, callback) {
-    
     console.log("> PLM: GET item GRID details"); 
     
     let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId + '/views/13/rows';
@@ -70,7 +68,6 @@ getDetailsGrid: function(wsId, dmsId, callback) {
 },
 
 uploadFile: function(wsId, dmsId, fileName, folder, srcFile) {
-
     console.log("> PLM: Getting list of attachments");
 
     let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments?asc=name';
@@ -110,7 +107,6 @@ uploadFile: function(wsId, dmsId, fileName, folder, srcFile) {
 },
 
 createFileFolder: function(wsId, dmsId, folder) {
-    
     console.log(' > PLM: Creating folder ' + folder);
         
     let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/folders';
@@ -156,7 +152,6 @@ createFile: function(wsId, dmsId, folderId, fileName, srcFile) {
 },
 
 prepareUpload: function(fileData, callback) {
-    
     console.log('> PLM: Preparing file upload to S3');
 
     axios({
@@ -182,7 +177,6 @@ prepareUpload: function(fileData, callback) {
 },
 
 uploadLocalFile: function(fileName, fileData, srcFile, callback) {
-    
     console.log('> PLM: Uploading file now');
     
     let authorization = axios.defaults.headers.common['Authorization'];
@@ -202,7 +196,6 @@ uploadLocalFile: function(fileName, fileData, srcFile, callback) {
 }, 
 
 setAttachmentStatus: function(wsId, dmsId, fileId) {
-    
     console.log('> PLM: Setting attachment status');
     
     let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
@@ -218,7 +211,6 @@ setAttachmentStatus: function(wsId, dmsId, fileId) {
 },
 
 createVersion: function(wsId, dmsId, fileName, folderId, fileId, srcFile) {
-    
     console.log('> PLM: Creating new version as file exists already');
     
     let stats   = fs.statSync(srcFile);
@@ -242,6 +234,43 @@ createVersion: function(wsId, dmsId, fileName, folderId, fileId, srcFile) {
         console.log(error.message);
     });    
     
+},
+
+getTransitions: function(wsId, dmsId, callback) {
+    console.log('> PLM: Listing available transitions');
+    
+    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions';
+    console.log(url);
+    
+    axios.get(url, {}).then(function (response) {
+        callback(response.data);
+    }).catch(function (error) {
+        console.log(error.message);
+    });    
+},
+
+transition: function(wsId, dmsId, transId, step, comment) {
+    console.log('> PLM: Transition transition');
+
+    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions/' + transId;
+
+    axios.put(url, {
+        'workflowStep': step, 
+        'workflowComments': comment
+    }).catch(function (error) {
+        console.log(error.message);
+    });      
+
+},
+
+parseTransitions: function(data) {
+    var transitions = {};
+    for (var i in data) {
+        var trans = data[i];
+        console.log('Trans: ' + trans.customLabel + '[' + trans.urn + ']');
+        transitions[trans.customLabel] = trans;
+    }
+    return transitions;
 },
 
 parseValues: function(data) {

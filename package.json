@@ -4,6 +4,7 @@
     "express": "^4.18.1",
     "express-basic-auth": "^1.2.1",
     "fs": "^0.0.1-security",
+    "temp": "^0.9.4",
     "wkhtmltopdf": "^0.4.0"
   }
 }
