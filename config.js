@@ -19,7 +19,7 @@ exports.wkhtmltopdf = {
             'marginLeft'      : '0.5cm',
             'encoding': 'utf-8',
             'pageSize' : 'A4', 
-            'orientation': 'portrait'
+            'orientation': 'portrait',
         }
     }
 }
