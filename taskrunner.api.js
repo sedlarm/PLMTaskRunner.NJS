@@ -1,16 +1,8 @@
 const express = require('express');
 const bodyparser = require('body-parser');
 const app = express();
-const plmapi = require('./plm.js');
-const config = require('./config.js');
-const fs = require('fs');
-const pdf = require('wkhtmltopdf');
 const basicAuth = require('express-basic-auth');
-const plm = require('./plm.js');
-const temp = require('temp').track();
- 
-require('wkhtmltopdf').command = config.wkhtmltopdf.path;
-require('./plm.js').config = config;
+const f = require('./futurefarming/functions.js'); 
 
 app.use(basicAuth({
     users: config.api.basicAuth.users,
@@ -25,62 +17,18 @@ app.post('/api/v1/converttopdf/',
         let wsId = req.query.wsId;
         let dmsId = req.query.dmsId;
         let transId = req.query.transId;
-        plmapi.login(function() {
-            plmapi.getDetails(wsId, dmsId, (data) => {
-                console.log("Found ITEM: " + data.title);
-                let values = plmapi.parseValues(data);
-                let fileName = values.CISLO_FAKTURY + ".pdf";
-                convertToPdf(req.body, fileName, config.wkhtmltopdf.templates.faktura, (tmpFile) => {
-                    let stats = fs.statSync(tmpFile);
-                    console.log('PDF taks finished: ' + Math.round(stats.size/1024) + " KB");                    
-                    if (stats.size > 0 ) {
-                        plmapi.uploadFile(wsId, dmsId, fileName, null, tmpFile);
-                        fs.unlink(tmpFile, (err) => {
-                            if (err) {
-                                console.log("remove file failed: " + err.message);
-                            }
-                            res.send({status: 'OK'});
-                            if (transId) {
-                                plmapi.getTransitions(wsId, dmsId, (tdata) => {
-                                    var transitions = plmapi.parseTransitions(tdata);
-                                    var trans = Object.values(tdata).find(element => element.customLabel == transId);
-                                    if (trans) {
-                                        let comment = 'run by PLMTaskRunner service';
-                                        console.log('Perform transition ' + trans.customLabel + ' (' + dmsId + ')');
-                                        plmapi.performTransition(wsId, dmsId, trans.__self__, comment);
-                                    } else {
-                                        console.log('Error: Transition "' + trans.customLabel + '" not found');   
-                                    }
-                                });
-                            }
-                        });
-                    } else {
-                        res.status(500).send('PDF creation failed');
-                    }
-                });
-            });
-        }); 
-    });
-
-function sanitizeHtml(html, absoluteUrl) {
-    return html.replaceAll(/(baseUrl:\s*\'|src=\"|src=\'|href=\")(\/)/g, '$1' + absoluteUrl);
-}
-
-function convertToPdf(fileData, fileName, pdfOptions, callback) {
-    //TODO: create temp file in TEMP dir insead
-    let tmpFile = './upload/' + fileName;
-
-    pdfOptions.debug = false;
-    pdfOptions.quiet = true;
-    pdfOptions.output = tmpFile;
-    //causing blank first page
-    //pdfOptions.enableLocalFileAccess = 'None';
-    pdfOptions.loadErrorHandling = 'ignore';
-
-    pdf(sanitizeHtml(fileData, config.plm.url), 
-        pdfOptions, 
-        (err, stream) => {
-            if (err) console.log(err.message);
-            callback(tmpFile);
-    });  
-}
+        //PLM task runner task ID (dmsId) in PLM
+        let taskId = req.query.taskId;
+        f.htmlToPdf(wsId, dmsId, req.body, (err) => {
+            if (err) {
+                console.log('Error: ' + err);
+                res.status(500).send('PDF creation failed');
+            } else {
+                res.send({status: 'OK'});
+                if (transId) {
+                    f.callTransition(wsId, dmsId, transId);
+                }                
+            }
+        });
+    }
+);

@@ -5,18 +5,19 @@ const { isStringObject } = require('util/types');
 
 module.exports = {
 
-login: function(callback) {
+login: async (callback) => {
     console.log("> PLM: DEV Authentication");
     
-    let url = module.exports.config.plm.devApiUrl + 'authentication/v1/authenticate';
+    try {
+        let url = module.exports.config.plm.devApiUrl + 'authentication/v1/authenticate';
 
-    let params = new URLSearchParams();
-    params.append('client_id', module.exports.config.plm.clientId);
-    params.append('client_secret', module.exports.config.plm.clientSecret);
-    params.append('grant_type', 'client_credentials'); 
-    params.append('scope', 'data:read');
-
-    axios.post(url, params.toString()).then(function (response) {
+        let params = new URLSearchParams();
+        params.append('client_id', module.exports.config.plm.clientId);
+        params.append('client_secret', module.exports.config.plm.clientSecret);
+        params.append('grant_type', 'client_credentials'); 
+        params.append('scope', 'data:read');
+    
+        const response = await axios.post(url, params.toString());
         
         if (response.status == 200) {
             axios.defaults.headers.common['Conent-Type']    = "application/json";
@@ -25,58 +26,58 @@ login: function(callback) {
             axios.defaults.headers.common['X-Tenant']       = module.exports.config.plm.tenant;
             axios.defaults.headers.common['Authorization']  = "Bearer " + response.data.access_token;
                 
-            console.log('Login to tenant ' + module.exports.config.plm.tenant + ' successful');
             callback();
         } else {
-            console.log('LOGIN FAILED');
+            throw new Error('LOGIN FAILED');
             console.log(response.error);
         }
 
-    }).catch(function (error) {
+    } catch (error) {
+        console.log('LOGIN FAILED', error.message);
 
-        console.log('LOGIN FAILED');
-        console.log(error);
-
-    });    
+    }    
 },
 
-getDetails: function(wsId, dmsId, callback) {
+getDetails: async(wsId, dmsId, callback) => {
     console.log("> PLM: GET item details"); 
-    
-    let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId;
-    
-    axios.get(url).then(function (response) {
+
+    try {     
+        let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId;
+        
+        const response = await axios.get(url);
+
         callback(response.data);
-    }).catch(function (error) {
-        console.log(error);
-    });
-    
+    } catch (error) {
+        console.log(error.message);
+    };
 },
 
-getDetailsGrid: function(wsId, dmsId, callback) {
+getDetailsGrid: async(wsId, dmsId, callback) => {
     console.log("> PLM: GET item GRID details"); 
     
-    let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId + '/views/13/rows';
-    
-    axios.get(url).then(function (response) {
-        console.log(response.data.rows.length + " grid rows");
+    try {
+        let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId + '/views/13/rows';
+        
+        const response = await axios.get(url);
+
         callback(response.data.rows);
-    }).catch(function (error) {
-        console.log(error);
-    });
-    
+    } catch (error) {
+        console.log(error.message);
+    }
 },
 
-uploadFile: function(wsId, dmsId, fileName, folder, srcFile) {
+uploadFile: async(wsId, dmsId, fileName, folder, srcFile) => {
     console.log("> PLM: Getting list of attachments");
 
-    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments?asc=name';
+    try {
+        let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments?asc=name';
 
-    axios.get(url, {
-        headers : {
-            'Accept' : 'application/vnd.autodesk.plm.attachments.bulk+json'
-        }
-    }).then(function (response) {
+        const response = await axios.get(url, {
+            headers : {
+                'Accept' : 'application/vnd.autodesk.plm.attachments.bulk+json'
+            }
+        });
+
         let folderId    =  null;
         let fileId      = '';
 
@@ -92,178 +93,188 @@ uploadFile: function(wsId, dmsId, fileName, folder, srcFile) {
                 }
             }
         }
-        
-        if(fileId !== '') {
-            module.exports.createVersion(wsId, dmsId, fileName, folderId, fileId, srcFile);
-        } else if(folderId === '') {
-            let folderId = createFileFolder(wsId, dmsId, folder);
-            module.exports.createFile(wsId, dmsId, {'id': folderId}, fileName, srcFile);
-        } else {
-            module.exports.createFile(wsId, dmsId, null, fileName, srcFile);
-        }
-    }).catch(function (error) {
+        await module.exports.uploadFileInt(wsId, dmsId, fileName, folderId, fileId, srcFile);
+
+    } catch (error) {
         console.log(error.message);
-    });
+    }
 },
 
-createFileFolder: function(wsId, dmsId, folder) {
-    console.log(' > PLM: Creating folder ' + folder);
+uploadFileInt: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
+    if(fileId !== '') {
+        await module.exports.createVersion(wsId, dmsId, fileName, folderId, fileId, srcFile);
+    } else if(folderId === '') {
+        let folderId = await createFileFolder(wsId, dmsId, folder);
+        await module.exports.createFile(wsId, dmsId, {'id': folderId}, fileName, srcFile);
+    } else {
+        await module.exports.createFile(wsId, dmsId, null, fileName, srcFile);
+    }
+},
+
+createFileFolder: async(wsId, dmsId, folder) => {
+    console.log('> PLM: Creating folder ' + folder);
         
-    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/folders';
+    try {
+        let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/folders';
     
-    axios.post(url, {
-        'folderName' : folder 
-    }).then(function (response) {
+        const response = await axios.post(url, {
+            'folderName' : folder 
+        });
         
         let location    = response.headers.location;
         let temp        = location.split('/');
         let folderId    = temp[temp.length - 1];
         
         return folderId;
-
-    }).catch(function (error) {
+    } catch (error) {
         console.log(error.message);
-    }); 
-    
+        return null;
+    }
 },
 
-createFile: function(wsId, dmsId, folderId, fileName, srcFile) {
-    
-    console.log(' > PLM: Creating file record');
-    
-    let stats   = fs.statSync(srcFile);
-    let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments';
-       
-    axios.post(url, {
-        'description'   : fileName,
-        'name'          : fileName,
-        'resourceName'  : fileName,
-        'folder'        : folderId,
-        'size'          : stats.size
-    }).then(function (response) {
-        module.exports.prepareUpload(response.data, function() {
+createFile: async(wsId, dmsId, folderId, fileName, srcFile) => {
+    console.log('> PLM: Creating file record');
+
+    try {
+        let stats   = await fs.statSync(srcFile);
+        let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments';
+        
+        const response = await axios.post(url, {
+            'description'   : fileName,
+            'name'          : fileName,
+            'resourceName'  : fileName,
+            'folder'        : folderId,
+            'size'          : stats.size
+        })
+        await module.exports.prepareUpload(response.data, function() {
             module.exports.uploadLocalFile(fileName, response.data, srcFile, function(fileId) {
                 module.exports.setAttachmentStatus(wsId, dmsId, fileId);
             });          
         });
-    }).catch(function (error) {
+    } catch (error) {
         console.log(error.message);
-    });    
+    }    
 },
 
-prepareUpload: function(fileData, callback) {
+prepareUpload: async(fileData, callback) => {
     console.log('> PLM: Preparing file upload to S3');
 
-    axios({
-        method  : 'options',
-        url     :  fileData.url, 
-        headers : {
-            'Accept'            : '*/*',
-            'Accept-Encoding'   : 'gzip, deflate, br',
-            'Accept-Language'   : 'en-US,en;q=0.9,de;q=0.8,en-GB;q=0.7',
-            'Access-Control-Request-Headers': 'content-type,x-amz-meta-filename',
-            'Access-Control-Request-Method' : 'PUT',
-            'Host'              : 'plm360-aws-useast.s3.amazonaws.com',
-            'Origin'            : 'https://' + module.exports.config.plm.tenant + '.autodeskplm360.net',
-            'Sec-Fetch-Mode'    : 'cors',
-            'Sec-Fetch-Site'    : 'cross-site'
-        }
-    }).then(function (response) {
+    try {
+        const respons = await axios({
+            method  : 'options',
+            url     :  fileData.url, 
+            headers : {
+                'Accept'            : '*/*',
+                'Accept-Encoding'   : 'gzip, deflate, br',
+                'Accept-Language'   : 'en-US,en;q=0.9,de;q=0.8,en-GB;q=0.7',
+                'Access-Control-Request-Headers': 'content-type,x-amz-meta-filename',
+                'Access-Control-Request-Method' : 'PUT',
+                'Host'              : 'plm360-aws-useast.s3.amazonaws.com',
+                'Origin'            : 'https://' + module.exports.config.plm.tenant + '.autodeskplm360.net',
+                'Sec-Fetch-Mode'    : 'cors',
+                'Sec-Fetch-Site'    : 'cross-site'
+            }
+        });
+
         callback();
-    }).catch(function (error) {
+    } catch (error) {
         console.log(error.message);
-    }); 
-    
+    }
 },
 
-uploadLocalFile: function(fileName, fileData, srcFile, callback) {
+uploadLocalFile: async(fileName, fileData, srcFile, callback) => {
     console.log('> PLM: Uploading file now');
     
-    let authorization = axios.defaults.headers.common['Authorization'];
+    try {
+        let authorization = axios.defaults.headers.common['Authorization'];
 
-    delete axios.defaults.headers.common['Authorization'];
-    
-    axios.put(fileData.url, fs.readFileSync(srcFile),{
-        headers : fileData.extraHeaders
-    }).then(function (response) {
+        delete axios.defaults.headers.common['Authorization'];
+        
+        await axios.put(fileData.url, fs.readFileSync(srcFile),{
+            headers : fileData.extraHeaders
+        });
+
         axios.defaults.headers.common['Authorization'] = authorization;
+        
         callback(fileData.id);
-    }).catch(function (error) {
-        console.log(error);
+    } catch (error) {
         console.log(error.message);
-    }); 
+    }
     
 }, 
 
-setAttachmentStatus: function(wsId, dmsId, fileId) {
+setAttachmentStatus: async(wsId, dmsId, fileId) => {
     console.log('> PLM: Setting attachment status');
     
-    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
-    
-    axios.patch(url, {
-        status : {
-            'name' : 'CheckIn'
-        }
-    }).catch(function (error) {
+    try {
+        let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
+        
+        await axios.patch(url, {
+            status : {
+                'name' : 'CheckIn'
+            }
+        });
+    } catch (error) {
         console.log(error.message);
-    }); 
-    
+    }
 },
 
-createVersion: function(wsId, dmsId, fileName, folderId, fileId, srcFile) {
+createVersion: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
     console.log('> PLM: Creating new version as file exists already');
     
-    let stats   = fs.statSync(srcFile);
-    let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
-    
-    axios.post(url, {
-        'description'   : fileName,
-        'fileName'      : fileName,
-        'name'          : fileName,
-        'resourceName'  : fileName,
-        'folder'        : folderId,
-        'fileTypeString': 'file/type',
-        'size'          : stats.size
-    }).then(function (response) {
+    try {
+        let stats   = fs.statSync(srcFile);
+        let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
+        
+        const response = await axios.post(url, {
+            'description'   : fileName,
+            'fileName'      : fileName,
+            'name'          : fileName,
+            'resourceName'  : fileName,
+            'folder'        : folderId,
+            'fileTypeString': 'file/type',
+            'size'          : stats.size
+        });
         module.exports.prepareUpload(response.data, function() {
             module.exports.uploadLocalFile(fileName, response.data, srcFile, function(fileId) {
                 module.exports.setAttachmentStatus(wsId, dmsId, fileId);
             });
         });
-    }).catch(function (error) {
+    } catch (error) {
         console.log(error.message);
-    });    
-    
+    } 
 },
 
-getTransitions: function(wsId, dmsId, callback) {
+getTransitions: async(wsId, dmsId, callback) => {
     console.log('> PLM: Listing available transitions');
     
-    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions';
-    console.log(url);
-    
-    axios.get(url, {}).then(function (response) {
+    try {
+        let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions';
+        
+        const response = await axios.get(url, {});
+
         callback(response.data);
-    }).catch(function (error) {
+    } catch (error) {
         console.log(error.message);
-    });    
+    }
 },
 
-performTransition: function(wsId, dmsId, link, comment) {
+performTransition: async(wsId, dmsId, link, comment) => {
     console.log('> PLM: Transition transition');
 
-    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions';
+    try {
+        let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions';
 
-    axios.post(url, {
-        'comment': comment
-    }, {
-        headers : {
-            'content-location' : link
-        }
-    }).catch(function (error) {
+        await axios.post(url, {
+            'comment': comment
+            }, {
+            headers : {
+                'content-location' : link
+            }
+        });
+    } catch (error) {
         console.log(error.message);
-    });      
-
+    }
 },
 
 parseTransitions: function(data) {
