@@ -249,14 +249,17 @@ getTransitions: function(wsId, dmsId, callback) {
     });    
 },
 
-transition: function(wsId, dmsId, transId, step, comment) {
+performTransition: function(wsId, dmsId, link, comment) {
     console.log('> PLM: Transition transition');
 
-    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions/' + transId;
+    let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions';
 
-    axios.put(url, {
-        'workflowStep': step, 
-        'workflowComments': comment
+    axios.post(url, {
+        'comment': comment
+    }, {
+        headers : {
+            'content-location' : link
+        }
     }).catch(function (error) {
         console.log(error.message);
     });      

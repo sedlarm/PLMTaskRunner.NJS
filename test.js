@@ -14,7 +14,7 @@ require('./plm.js').config = config;
 
 let wsId = 274;
 let dmsId = 14349;
-let transId = 1;
+let transId = 'ODESLAT_DO_ABBRA';
 plmapi.login(function() {
     plmapi.getDetails(wsId, dmsId, (data) => {
         console.log("Found ITEM: " + data.title);
@@ -35,12 +35,13 @@ plmapi.login(function() {
                     if (transId) {
                         plmapi.getTransitions(wsId, dmsId, (tdata) => {
                             var transitions = plmapi.parseTransitions(tdata);
-                            var trans = null;
-                            if (trans = Object.values.find(element => element.transitionID == transId)) {
-                                let step = tdata.currentStep + 1;
+                            var trans = Object.values(tdata).find(element => element.customLabel == transId);
+                            if (trans) {
                                 let comment = 'run by PLMTaskRunner service';
-                                console.log('Calling transition ' + trans.transitionID + ',' + step);
-                                //plmapi.transition(wsId, dmsId, trans.transitionID, step, comment);
+                                console.log('Perform transition ' + trans.customLabel + ' (' + dmsId + ')');
+                                //plmapi.performTransition(wsId, dmsId, trans.__self__, comment);
+                            } else {
+                                console.log('Error: Transition "' + trans.customLabel + '" not found');   
                             }
                         });
                     }
