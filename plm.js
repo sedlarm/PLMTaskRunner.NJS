@@ -6,8 +6,6 @@ const { isStringObject } = require('util/types');
 module.exports = {
 
 login: async (callback) => {
-    console.log("> PLM: DEV Authentication");
-    
     try {
         let url = module.exports.config.plm.devApiUrl + 'authentication/v1/authenticate';
 
@@ -26,49 +24,43 @@ login: async (callback) => {
             axios.defaults.headers.common['X-Tenant']       = module.exports.config.plm.tenant;
             axios.defaults.headers.common['Authorization']  = "Bearer " + response.data.access_token;
                 
-            callback();
+            await callback();
         } else {
             throw new Error('LOGIN FAILED');
             console.log(response.error);
         }
 
     } catch (error) {
-        console.log('LOGIN FAILED', error.message);
+        console.error('LOGIN FAILED', error.message);
 
     }    
 },
 
 getDetails: async(wsId, dmsId, callback) => {
-    console.log("> PLM: GET item details"); 
-
     try {     
         let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId;
         
         const response = await axios.get(url);
 
-        callback(response.data);
+        await callback(response.data);
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     };
 },
 
 getDetailsGrid: async(wsId, dmsId, callback) => {
-    console.log("> PLM: GET item GRID details"); 
-    
     try {
         let url = module.exports.config.plm.apiUrl + "workspaces/" + wsId + "/items/" + dmsId + '/views/13/rows';
         
         const response = await axios.get(url);
 
-        callback(response.data.rows);
+        await callback(response.data.rows);
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     }
 },
 
 uploadFile: async(wsId, dmsId, fileName, folder, srcFile, callback) => {
-    console.log("> PLM: Getting list of attachments");
-
     try {
         let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments?asc=name';
 
@@ -95,10 +87,10 @@ uploadFile: async(wsId, dmsId, fileName, folder, srcFile, callback) => {
         }
         await module.exports.uploadFileInt(wsId, dmsId, fileName, folderId, fileId, srcFile);
 
-	callback();
+        await callback();
 
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     }
 },
 
@@ -114,8 +106,6 @@ uploadFileInt: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
 },
 
 createFileFolder: async(wsId, dmsId, folder) => {
-    console.log('> PLM: Creating folder ' + folder);
-        
     try {
         let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/folders';
     
@@ -135,8 +125,6 @@ createFileFolder: async(wsId, dmsId, folder) => {
 },
 
 createFile: async(wsId, dmsId, folderId, fileName, srcFile) => {
-    console.log('> PLM: Creating file record');
-
     try {
         let stats   = await fs.statSync(srcFile);
         let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments';
@@ -150,13 +138,11 @@ createFile: async(wsId, dmsId, folderId, fileName, srcFile) => {
         })
         await module.exports.processFile(wsId, dmsId, fileName, srcFile, response.data);
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     }    
 },
 
 prepareUpload: async(fileData, callback) => {
-    console.log('> PLM: Preparing file upload to S3');
-
     try {
         const respons = await axios({
             method  : 'options',
@@ -176,13 +162,11 @@ prepareUpload: async(fileData, callback) => {
 
         await callback();
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     }
 },
 
 uploadLocalFile: async(fileName, fileData, srcFile, callback) => {
-    console.log('> PLM: Uploading file now');
-    
     try {
         let authorization = axios.defaults.headers.common['Authorization'];
 
@@ -196,14 +180,12 @@ uploadLocalFile: async(fileName, fileData, srcFile, callback) => {
         
         await callback(fileData.id);
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     }
     
 }, 
 
-setAttachmentStatus: async(wsId, dmsId, fileId) => {
-    console.log('> PLM: Setting attachment status');
-    
+setAttachmentStatus: async(wsId, dmsId, fileId, callback) => {
     try {
         let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
         
@@ -212,14 +194,14 @@ setAttachmentStatus: async(wsId, dmsId, fileId) => {
                 'name' : 'CheckIn'
             }
         });
+
+        await callback();
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     }
 },
 
 createVersion: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
-    console.log('> PLM: Creating new version as file exists already');
-    
     try {
         let stats   = fs.statSync(srcFile);
         let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
@@ -235,14 +217,14 @@ createVersion: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
         });
         await module.exports.processFile(wsId, dmsId, fileName, srcFile, response.data);
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     } 
 },
 
 processFile: async(wsId, dmsId, fileName, srcFile, fileData) => {
     await module.exports.prepareUpload(fileData, async function() {
         await module.exports.uploadLocalFile(fileName, fileData, srcFile, async function(fileId) {
-            await module.exports.setAttachmentStatus(wsId, dmsId, fileId);
+            await module.exports.setAttachmentStatus(wsId, dmsId, fileId, null);
         });
     });
 },
@@ -255,13 +237,13 @@ getTransitions: async(wsId, dmsId, callback) => {
         
         const response = await axios.get(url, {});
 
-        callback(response.data);
+        await callback(response.data);
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     }
 },
 
-performTransition: async(wsId, dmsId, link, comment) => {
+performTransition: async(wsId, dmsId, link, comment, callback) => {
     console.log('> PLM: Transition transition');
 
     try {
@@ -274,8 +256,10 @@ performTransition: async(wsId, dmsId, link, comment) => {
                 'content-location' : link
             }
         });
+
+        await callback();
     } catch (error) {
-        console.log(error.message);
+        console.error(error.message);
     }
 },
 
