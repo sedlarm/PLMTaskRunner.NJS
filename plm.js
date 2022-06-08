@@ -148,10 +148,7 @@ createFile: async(wsId, dmsId, folderId, fileName, srcFile) => {
             'folder'        : folderId,
             'size'          : stats.size
         })
-        let fileData = response.data;
-        await module.exports.prepareUpload(fileData, null);
-        await module.exports.uploadLocalFile(fileName, fileData, srcFile, null);
-        await module.exports.setAttachmentStatus(wsId, dmsId, fileData.fileId);
+        await module.exports.processFile(wsId, dmsId, fileName, srcFile, response.data);
     } catch (error) {
         console.log(error.message);
     }    
@@ -236,14 +233,18 @@ createVersion: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
             'fileTypeString': 'file/type',
             'size'          : stats.size
         });
-        module.exports.prepareUpload(response.data, function() {
-            module.exports.uploadLocalFile(fileName, response.data, srcFile, function(fileId) {
-                module.exports.setAttachmentStatus(wsId, dmsId, fileId);
-            });
-        });
+        await module.exports.processFile(wsId, dmsId, fileName, srcFile, response.data);
     } catch (error) {
         console.log(error.message);
     } 
+},
+
+processFile: async(wsId, dmsId, fileName, srcFile, fileData) => {
+    await module.exports.prepareUpload(fileData, function() {
+        await module.exports.uploadLocalFile(fileName, response.data, srcFile, function(fileId) {
+            await module.exports.setAttachmentStatus(wsId, dmsId, fileId);
+        });
+    });
 },
 
 getTransitions: async(wsId, dmsId, callback) => {
