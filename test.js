@@ -1,25 +1,34 @@
 
-const f = require('./functions.farmia.js'); 
-const fs = require('fs');
 const f = require('./futurefarming/functions.js'); 
+const fs = require('fs');
+require('wkhtmltopdf').command = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe';
 
 let wsId = 274;
 let dmsId = 14349;
-let transId = 'ODESLAT_DO_ABBRA';
+let transId = ''; //'ODESLAT_DO_ABBRA';
 
 
 fs.readFile('./upload/test2.html', 'utf8', (err, data) => {
     if (!err) {
-        f.htmlToPdf(wsId, dmsId, data, (err2) => {
+        f.htmlToPdf(wsId, dmsId, data, (err, pdfData) => {
             if (err) {
-                console.log('Error: ' + err2);
-                //res.status(500).send('PDF creation failed');
+                console.error('Error: ' + err);
             } else {
-                //res.send({status: 'OK'});
+                console.log('PDF conversion finished');
+                let resObj = {
+                    status: 'ok',
+                    file: {
+                        mime: "@file/pdf",
+                        data: pdfData
+                    }
+                };
+                //console.log(resObj);
                 if (transId) {
-                    //f.callTransition(wsId, dmsId, transId);
+                    f.callTransition(wsId, dmsId, transId);
                 }                
             }
-        });
+        });    
+    } else {
+        console.error(err.message);
     }
 });

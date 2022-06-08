@@ -31,7 +31,7 @@ login: async (callback) => {
         }
 
     } catch (error) {
-        console.error('LOGIN FAILED', error.message);
+        console.error('plm.login:', error.message);
 
     }    
 },
@@ -44,7 +44,7 @@ getDetails: async(wsId, dmsId, callback) => {
 
         await callback(response.data);
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.getDetails:', error.message);
     };
 },
 
@@ -56,7 +56,7 @@ getDetailsGrid: async(wsId, dmsId, callback) => {
 
         await callback(response.data.rows);
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.getDetailsGrid:', error.message);
     }
 },
 
@@ -90,7 +90,7 @@ uploadFile: async(wsId, dmsId, fileName, folder, srcFile, callback) => {
         await callback();
 
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.uploadFile:', error.message);
     }
 },
 
@@ -119,7 +119,7 @@ createFileFolder: async(wsId, dmsId, folder) => {
         
         return folderId;
     } catch (error) {
-        console.log(error.message);
+        console.log('plm.createFileFolder:', error.message);
         return null;
     }
 },
@@ -138,7 +138,7 @@ createFile: async(wsId, dmsId, folderId, fileName, srcFile) => {
         })
         await module.exports.processFile(wsId, dmsId, fileName, srcFile, response.data);
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.createFile:', error.message);
     }    
 },
 
@@ -162,7 +162,7 @@ prepareUpload: async(fileData, callback) => {
 
         await callback();
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.prepareUpload:', error.message);
     }
 },
 
@@ -180,7 +180,7 @@ uploadLocalFile: async(fileName, fileData, srcFile, callback) => {
         
         await callback(fileData.id);
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.uploadLocalFile:', error.message);
     }
     
 }, 
@@ -197,7 +197,7 @@ setAttachmentStatus: async(wsId, dmsId, fileId, callback) => {
 
         await callback();
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.setAttachmentStatus:', error.message);
     }
 },
 
@@ -217,21 +217,19 @@ createVersion: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
         });
         await module.exports.processFile(wsId, dmsId, fileName, srcFile, response.data);
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.createVersion:', error.message);
     } 
 },
 
 processFile: async(wsId, dmsId, fileName, srcFile, fileData) => {
     await module.exports.prepareUpload(fileData, async function() {
         await module.exports.uploadLocalFile(fileName, fileData, srcFile, async function(fileId) {
-            await module.exports.setAttachmentStatus(wsId, dmsId, fileId, null);
+            await module.exports.setAttachmentStatus(wsId, dmsId, fileId, async()=>{});
         });
     });
 },
 
 getTransitions: async(wsId, dmsId, callback) => {
-    console.log('> PLM: Listing available transitions');
-    
     try {
         let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions';
         
@@ -239,13 +237,11 @@ getTransitions: async(wsId, dmsId, callback) => {
 
         await callback(response.data);
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.getTransitions:', error.message);
     }
 },
 
 performTransition: async(wsId, dmsId, link, comment, callback) => {
-    console.log('> PLM: Transition transition');
-
     try {
         let url = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/workflows/1/transitions';
 
@@ -259,7 +255,7 @@ performTransition: async(wsId, dmsId, link, comment, callback) => {
 
         await callback();
     } catch (error) {
-        console.error(error.message);
+        console.error('plm.performTransition:', error.message);
     }
 },
 
