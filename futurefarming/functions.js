@@ -68,4 +68,4 @@ function convertToPdf(fileData, tmpFile, pdfOptions, callback) {
     });  
 }
 
-module.exports = {htmlToPdf, callTransition}
+module.exports = {htmlToPdf, callTransition, config}
