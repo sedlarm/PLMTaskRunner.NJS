@@ -31,7 +31,7 @@ app.post('/api/v1/converttopdf/',
                         data: pdfData
                     }
                 };
-                res.send({resObj});
+                res.send(resObj);
                 if (transId) {
                     f.callTransition(wsId, dmsId, transId);
                 }                
