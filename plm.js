@@ -148,11 +148,10 @@ createFile: async(wsId, dmsId, folderId, fileName, srcFile) => {
             'folder'        : folderId,
             'size'          : stats.size
         })
-        await module.exports.prepareUpload(response.data, async function() {
-            await module.exports.uploadLocalFile(fileName, response.data, srcFile, async function(fileId) {
-                await module.exports.setAttachmentStatus(wsId, dmsId, fileId);
-            });          
-        });
+        let fileData = response.data;
+        await module.exports.prepareUpload(fileData, null);
+        await module.exports.uploadLocalFile(fileName, fileData, srcFile, null);
+        await module.exports.setAttachmentStatus(wsId, dmsId, fileData.fileId);
     } catch (error) {
         console.log(error.message);
     }    
@@ -178,7 +177,7 @@ prepareUpload: async(fileData, callback) => {
             }
         });
 
-        await callback();
+        callback();
     } catch (error) {
         console.log(error.message);
     }
@@ -198,7 +197,7 @@ uploadLocalFile: async(fileName, fileData, srcFile, callback) => {
 
         axios.defaults.headers.common['Authorization'] = authorization;
         
-        await callback(fileData.id);
+        callback(fileData.id);
     } catch (error) {
         console.log(error.message);
     }
