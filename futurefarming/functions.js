@@ -19,8 +19,10 @@ function htmlToPdf(wsId, dmsId, pdfData, callback) {
                 console.log('PDF taks finished: ' + Math.round(stats.size/1024) + " KB");                    
                 if (stats.size > 0 ) {
                     plmapi.uploadFile(wsId, dmsId, fileName, null, tmpFile, (result) => {
+                        console.log('Upload to PLM finished');
                         const pdfData = fs.readFileSync(tmpFile, {encoding: 'base64'});
                         fs.unlink(tmpFile, (err) => {
+                            console.log('unlink callback');
                             if (err) {
                                 console.log("remove file failed: " + err.message);
                             }

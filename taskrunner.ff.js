@@ -24,6 +24,7 @@ app.post('/api/v1/converttopdf/',
                 console.log('Error: ' + err);
                 res.status(500).send('PDF creation failed');
             } else {
+                console.log('PDF conversion finished');
                 let resObj = {
                     status: 'ok',
                     file: {
