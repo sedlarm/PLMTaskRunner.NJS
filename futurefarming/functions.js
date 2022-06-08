@@ -19,15 +19,16 @@ function htmlToPdf(wsId, dmsId, pdfData, callback) {
                 console.log('PDF taks finished: ' + Math.round(stats.size/1024) + " KB");                    
                 if (stats.size > 0 ) {
                     plmapi.uploadFile(wsId, dmsId, fileName, null, tmpFile, (result) => {
+                        const pdfData = fs.readFileSync(tmpFile, {encoding: 'base64'});
                         fs.unlink(tmpFile, (err) => {
                             if (err) {
                                 console.log("remove file failed: " + err.message);
                             }
-                            callback(null);
+                            callback(null, pdfData);
                         });
                     });
                 } else {
-                    callback('PDF creation failed');
+                    callback('PDF creation failed', null);
                 }
             });
         });

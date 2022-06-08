@@ -19,12 +19,19 @@ app.post('/api/v1/converttopdf/',
         let transId = req.query.transId;
         //PLM task runner task ID (dmsId) in PLM
         let taskId = req.query.taskId;
-        f.htmlToPdf(wsId, dmsId, req.body, (err) => {
+        f.htmlToPdf(wsId, dmsId, req.body, (err, pdfData) => {
             if (err) {
                 console.log('Error: ' + err);
                 res.status(500).send('PDF creation failed');
             } else {
-                res.send({status: 'OK'});
+                let resObj = {
+                    status: 'ok',
+                    file: {
+                        mime: "@file/pdf",
+                        data: pdfData
+                    }
+                };
+                res.send({resObj});
                 if (transId) {
                     f.callTransition(wsId, dmsId, transId);
                 }                
