@@ -5,7 +5,7 @@ const basicAuth = require('express-basic-auth');
 const f = require('./futurefarming/functions.js'); 
 
 app.use(basicAuth({
-    users: config.api.basicAuth.users,
+    users: f.config.api.basicAuth.users,
     challenge: false // <--- needed to actually show the login dialog!
 }));
 
