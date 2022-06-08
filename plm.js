@@ -178,7 +178,7 @@ prepareUpload: async(fileData, callback) => {
             }
         });
 
-        callback();
+        await callback();
     } catch (error) {
         console.log(error.message);
     }
@@ -198,7 +198,7 @@ uploadLocalFile: async(fileName, fileData, srcFile, callback) => {
 
         axios.defaults.headers.common['Authorization'] = authorization;
         
-        callback(fileData.id);
+        await callback(fileData.id);
     } catch (error) {
         console.log(error.message);
     }
