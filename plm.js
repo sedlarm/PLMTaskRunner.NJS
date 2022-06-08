@@ -241,7 +241,7 @@ createVersion: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
 
 processFile: async(wsId, dmsId, fileName, srcFile, fileData) => {
     await module.exports.prepareUpload(fileData, function() {
-        module.exports.uploadLocalFile(fileName, response.data, srcFile, function(fileId) {
+        module.exports.uploadLocalFile(fileName, fileData, srcFile, function(fileId) {
             module.exports.setAttachmentStatus(wsId, dmsId, fileId);
         });
     });
