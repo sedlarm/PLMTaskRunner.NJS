@@ -66,7 +66,7 @@ getDetailsGrid: async(wsId, dmsId, callback) => {
     }
 },
 
-uploadFile: async(wsId, dmsId, fileName, folder, srcFile) => {
+uploadFile: async(wsId, dmsId, fileName, folder, srcFile, callback) => {
     console.log("> PLM: Getting list of attachments");
 
     try {
@@ -94,6 +94,8 @@ uploadFile: async(wsId, dmsId, fileName, folder, srcFile) => {
             }
         }
         await module.exports.uploadFileInt(wsId, dmsId, fileName, folderId, fileId, srcFile);
+
+	callback();
 
     } catch (error) {
         console.log(error.message);

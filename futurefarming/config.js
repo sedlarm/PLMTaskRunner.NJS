@@ -10,7 +10,7 @@ exports.plm = {
 }
 
 exports.wkhtmltopdf = {
-    path:           'C:\\Private\\wkhtmltox\\bin\\wkhtmltopdf.exe',
+    path:           'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe',
     templates: {
         faktura: {
             'marginTop'       : '0.5cm',   // default is 0, units: mm, cm, in, px
