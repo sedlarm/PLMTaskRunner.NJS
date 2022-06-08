@@ -149,8 +149,8 @@ createFile: async(wsId, dmsId, folderId, fileName, srcFile) => {
             'size'          : stats.size
         })
         await module.exports.prepareUpload(response.data, function() {
-            module.exports.uploadLocalFile(fileName, response.data, srcFile, function(fileId) {
-                module.exports.setAttachmentStatus(wsId, dmsId, fileId);
+            await module.exports.uploadLocalFile(fileName, response.data, srcFile, function(fileId) {
+                await module.exports.setAttachmentStatus(wsId, dmsId, fileId);
             });          
         });
     } catch (error) {
