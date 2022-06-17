@@ -85,9 +85,9 @@ uploadFile: async(wsId, dmsId, fileName, folder, srcFile, callback) => {
                 }
             }
         }
-        await module.exports.uploadFileInt(wsId, dmsId, fileName, folderId, fileId, srcFile);
+        let fileData = await module.exports.uploadFileInt(wsId, dmsId, fileName, folderId, fileId, srcFile);
 
-        await callback();
+        await callback(fileData);
 
     } catch (error) {
         console.error('plm.uploadFile:', error.message);
@@ -95,14 +95,16 @@ uploadFile: async(wsId, dmsId, fileName, folder, srcFile, callback) => {
 },
 
 uploadFileInt: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
+    let fileData = null;
     if(fileId !== '') {
-        await module.exports.createVersion(wsId, dmsId, fileName, folderId, fileId, srcFile);
+        fileData = await module.exports.createVersion(wsId, dmsId, fileName, folderId, fileId, srcFile);
     } else if(folderId === '') {
         let folderId = await createFileFolder(wsId, dmsId, folder);
-        await module.exports.createFile(wsId, dmsId, {'id': folderId}, fileName, srcFile);
+        fileData = await module.exports.createFile(wsId, dmsId, {'id': folderId}, fileName, srcFile);
     } else {
-        await module.exports.createFile(wsId, dmsId, null, fileName, srcFile);
+        fileData = await module.exports.createFile(wsId, dmsId, null, fileName, srcFile);
     }
+    return fileData;
 },
 
 createFileFolder: async(wsId, dmsId, folder) => {
@@ -137,10 +139,43 @@ createFile: async(wsId, dmsId, folderId, fileName, srcFile) => {
             'size'          : stats.size
         })
         await module.exports.processFile(wsId, dmsId, fileName, srcFile, response.data);
+
+        return response.data;
     } catch (error) {
         console.error('plm.createFile:', error.message);
     }    
 },
+
+createVersion: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
+    try {
+        let stats   = fs.statSync(srcFile);
+        let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
+        
+        const response = await axios.post(url, {
+            'description'   : fileName,
+            'fileName'      : fileName,
+            'name'          : fileName,
+            'resourceName'  : fileName,
+            'folder'        : folderId,
+            'fileTypeString': 'file/type',
+            'size'          : stats.size
+        });
+        await module.exports.processFile(wsId, dmsId, fileName, srcFile, response.data);
+
+        return response.data;
+    } catch (error) {
+        console.error('plm.createVersion:', error.message);
+    } 
+},
+
+processFile: async(wsId, dmsId, fileName, srcFile, fileData) => {
+    await module.exports.prepareUpload(fileData, async function() {
+        await module.exports.uploadLocalFile(fileName, fileData, srcFile, async function(fileId) {
+            await module.exports.setAttachmentStatus(wsId, dmsId, fileId, async()=>{});
+        });
+    });
+},
+
 
 prepareUpload: async(fileData, callback) => {
     try {
@@ -199,34 +234,6 @@ setAttachmentStatus: async(wsId, dmsId, fileId, callback) => {
     } catch (error) {
         console.error('plm.setAttachmentStatus:', error.message);
     }
-},
-
-createVersion: async(wsId, dmsId, fileName, folderId, fileId, srcFile) => {
-    try {
-        let stats   = fs.statSync(srcFile);
-        let url     = module.exports.config.plm.apiUrl + 'workspaces/' + wsId + '/items/' + dmsId + '/attachments/' + fileId;
-        
-        const response = await axios.post(url, {
-            'description'   : fileName,
-            'fileName'      : fileName,
-            'name'          : fileName,
-            'resourceName'  : fileName,
-            'folder'        : folderId,
-            'fileTypeString': 'file/type',
-            'size'          : stats.size
-        });
-        await module.exports.processFile(wsId, dmsId, fileName, srcFile, response.data);
-    } catch (error) {
-        console.error('plm.createVersion:', error.message);
-    } 
-},
-
-processFile: async(wsId, dmsId, fileName, srcFile, fileData) => {
-    await module.exports.prepareUpload(fileData, async function() {
-        await module.exports.uploadLocalFile(fileName, fileData, srcFile, async function(fileId) {
-            await module.exports.setAttachmentStatus(wsId, dmsId, fileId, async()=>{});
-        });
-    });
 },
 
 getTransitions: async(wsId, dmsId, callback) => {

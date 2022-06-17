@@ -1,6 +1,7 @@
 const fs = require('fs');
 const pdf = require('wkhtmltopdf');
 const temp = require('temp').track();
+const path = require('path');
 const plmapi = require('../plm.js');
 const config = require('./config.js');
 const { builtinModules } = require('module');
@@ -8,30 +9,44 @@ const { builtinModules } = require('module');
 require('wkhtmltopdf').command = config.wkhtmltopdf.path;
 require('../plm.js').config = config;
 
-function htmlToPdf(wsId, dmsId, pdfData, callback) {
-    plmapi.login(function() {
-        plmapi.getDetails(wsId, dmsId, (data) => {
-            console.log("Found ITEM: " + data.title);
-            let values = plmapi.parseValues(data);
-            let fileName = values.CISLO_FAKTURY + ".pdf";
-            convertToPdf(pdfData, './upload/' + fileName, config.wkhtmltopdf.templates.faktura, (tmpFile) => {
-                let stats = fs.statSync(tmpFile);
-                console.log('PDF taks finished: ' + Math.round(stats.size/1024) + " KB");                    
-                if (stats.size > 0 ) {
-                    plmapi.uploadFile(wsId, dmsId, fileName, null, tmpFile, async function(result) {
-                        console.log('Upload to PLM finished');
-                        const pdfData = fs.readFileSync(tmpFile, {encoding: 'base64'});
-                        fs.unlink(tmpFile, (err) => {
-                            if (err) {
-                                console.log("remove file failed: " + err.message);
-                            }
-                            callback(null, pdfData);
-                        });
+function htmlToPdf(htmlData, options, callback) {
+    /*
+    let options = {
+        wsId: wsId,
+        dmsId: dmsId,
+        fileName: fileName,
+        encoding: 'base64',
+        template: config.wkhtmltopdf.templates.faktura
+    }
+    */
+    temp.mkdir('pdfcreator', function(err, dirPath) {
+        var _tmpFile = path.join(dirPath, 'out.pdf');
+        convertToPdf(htmlData, _tmpFile, options.template, (tmpFile) => {
+            let stats = fs.statSync(tmpFile);
+            console.log('PDF taks finished: ' + Math.round(stats.size/1024) + " KB");                    
+            if (stats.size > 0 ) {
+                addPDFAttachment(options.wsId, options.dmsId, options.fileName, tmpFile, () => {
+                    const pdfData = fs.readFileSync(tmpFile, {encoding: options.encoding});
+                    fs.unlink(tmpFile, (err) => {
+                        if (err) {
+                            console.error("remove file failed: " + err.message);
+                        }
+                        callback(null, pdfData);
                     });
-                } else {
-                    callback('PDF creation failed', null);
-                }
-            });
+                });
+            } else {
+                callback('PDF creation failed', null);
+            }
+        });
+    });
+}
+
+function addPDFAttachment(wsId, dmsId, fileName, tmpFile, callback) {
+    plmapi.login(function() {
+        plmapi.uploadFile(wsId, dmsId, fileName, null, tmpFile, async function(fileData) {
+            console.log('Upload to PLM finished, FileId: ', fileData.id);
+
+            callback();
         });
     });     
 }

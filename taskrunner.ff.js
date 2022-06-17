@@ -17,9 +17,17 @@ app.post('/api/v1/converttopdf/',
         let wsId = req.query.wsId;
         let dmsId = req.query.dmsId;
         let transId = req.query.transId;
+        let fileName = req.query.fileName;
         //PLM task runner task ID (dmsId) in PLM
         let taskId = req.query.taskId;
-        f.htmlToPdf(wsId, dmsId, req.body, (err, pdfData) => {
+        let options = {
+            wsId: wsId,
+            dmsId: dmsId,
+            fileName: fileName,
+            encoding: 'base64',
+            template: f.config.wkhtmltopdf.templates.faktura
+        }
+        f.htmlToPdf(req.body, options, (err, pdfData) => {
             if (err) {
                 console.log('Error: ' + err);
                 res.status(500).send('PDF creation failed');
