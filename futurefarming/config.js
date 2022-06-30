@@ -14,9 +14,9 @@ exports.wkhtmltopdf = {
     templates: {
         faktura: {
             'marginTop'       : '0.5cm',   // default is 0, units: mm, cm, in, px
-            'marginRight'     : '0.5cm',
+            'marginRight'     : '0.75cm',
             'marginBottom'    : '0.5cm',
-            'marginLeft'      : '0.5cm',
+            'marginLeft'      : '0.75cm',
             'encoding': 'utf-8',
             'pageSize' : 'A4', 
             'orientation': 'portrait',

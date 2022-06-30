@@ -16,13 +16,19 @@ function htmlToPdf(htmlData, options, callback) {
         dmsId: dmsId,
         fileName: fileName,
         encoding: 'base64',
-        template: config.wkhtmltopdf.templates.faktura
+        template: config.wkhtmltopdf.templates.faktura,
+        htmlTemplate: "\\pdftemplates\\faktura.html",
     }
     */
     temp.mkdir('pdfcreator', function(err, dirPath) {
         var _tmpFile = path.join(dirPath, 'out.pdf');
+        if (options.htmlTemplate) {
+            var templ = fs.readFileSync(__dirname + options.htmlTemplate, {encoding:'utf8', flag:'r'});
+            htmlData = templ.replace("%BODY%", htmlData);
+        }
         convertToPdf(htmlData, _tmpFile, options.template, (tmpFile) => {
             let stats = fs.statSync(tmpFile);
+            fs.copyFileSync(tmpFile, __dirname + '/../upload/out.pdf');
             console.log('PDF taks finished: ' + Math.round(stats.size/1024) + " KB");                    
             if (stats.size > 0 ) {
                 addPDFAttachment(options.wsId, options.dmsId, options.fileName, tmpFile, () => {
@@ -76,8 +82,10 @@ function convertToPdf(fileData, tmpFile, pdfOptions, callback) {
     //causing blank first page
     //pdfOptions.enableLocalFileAccess = 'None';
     pdfOptions.loadErrorHandling = 'ignore';
+    var sanitized = sanitizeHtml(fileData, config.plm.url);
+    fs.writeFileSync(__dirname + '/../upload/sanitized.html', sanitized);
 
-    pdf(sanitizeHtml(fileData, config.plm.url), 
+    pdf(sanitizeHtml(sanitized, config.plm.url), 
         pdfOptions, 
         (err, stream) => {
             if (err) console.log(err.message);
@@ -85,4 +93,4 @@ function convertToPdf(fileData, tmpFile, pdfOptions, callback) {
     });  
 }
 
-module.exports = {htmlToPdf, callTransition, config}
+module.exports = {htmlToPdf, callTransition, convertToPdf, sanitizeHtml, config}

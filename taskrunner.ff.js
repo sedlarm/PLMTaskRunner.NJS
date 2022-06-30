@@ -25,7 +25,8 @@ app.post('/api/v1/converttopdf/',
             dmsId: dmsId,
             fileName: fileName,
             encoding: 'base64',
-            template: f.config.wkhtmltopdf.templates.faktura
+            template: f.config.wkhtmltopdf.templates.faktura,
+            htmlTemplate: "\\pdftemplates\\faktura.html",
         }
         f.htmlToPdf(req.body, options, (err, pdfData) => {
             if (err) {
